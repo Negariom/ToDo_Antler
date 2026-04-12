@@ -21,7 +21,31 @@ class TodoVisitor(todoParserVisitor):
     def visitAddCommand(self, ctx: todoParserParser.AddCommandContext):
         raw_text = ctx.STRING().getText()
         text = json.loads(raw_text)
-        self.store.add(text)
+
+        priority = 1  # LOW is default
+        if ctx.priority():
+            pri_text = ctx.priority().getText().upper()
+            if "MEDIUM" in pri_text:
+                priority = 2
+            elif "HIGH" in pri_text:
+                priority = 3
+
+        deadline = None
+        if ctx.deadline():
+            deadline = ctx.deadline().DATE().getText()
+
+        dependencies = []
+        if ctx.depends():
+            for int_node in ctx.depends().INT():
+                dependencies.append(int_node.getText())
+
+        note = None
+        if ctx.note():
+            # Get the STRING token from note block
+            raw_note = ctx.note().STRING().getText()
+            note = json.loads(raw_note)
+
+        self.store.add(text, priority=priority, deadline=deadline, dependencies=dependencies, note=note)
         return None
 
     def visitDoneCommand(self, ctx: todoParserParser.DoneCommandContext):
@@ -33,5 +57,15 @@ class TodoVisitor(todoParserVisitor):
         return None
 
     def visitListCommand(self, ctx: todoParserParser.ListCommandContext):
-        self.store.showList()
+        list_view = None
+        if ctx.listView():
+            list_view = ctx.listView().getText().upper()
+        self.store.showList(list_view=list_view)
+        return None
+
+    def visitNoteCommand(self, ctx: todoParserParser.NoteCommandContext):
+        task_id = int(ctx.INT().getText())
+        raw_note = ctx.STRING().getText()
+        note = json.loads(raw_note)
+        self.store.edit_note(task_id, note)
         return None

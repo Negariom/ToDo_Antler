@@ -10,7 +10,12 @@ def main():
     store = TodoStore()
     visitor = TodoVisitor(store)
 
-    print("TODO CLI. Komendy: ADD \"tekst\", DONE n, DELETE n, LIST")
+    print("TODO CLI. Komendy:")
+    print("  ADD \"tekst\" [PRIORITY LOW|MEDIUM|HIGH] [DEADLINE YYYY-MM-DD] [DEPENDS ON id1,id2] [NOTE \"notatka\"]")
+    print("  DONE n")
+    print("  DELETE n")
+    print("  NOTE n \"nowa notatka\"")
+    print("  LIST [ALL|DONE|DEPENDENCIES]")
     print("Wyjscie: exit lub quit")
 
     while True:
