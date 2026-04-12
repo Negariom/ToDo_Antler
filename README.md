@@ -1,6 +1,6 @@
-# ToDoAntler - System Zarządzania Zadaniami (CLI)
+# ToDoAntler - System Zarządzania Zadaniami (CLI + GUI)
 
-Zaawansowana aplikacja do zarządzania zadaniami z poziomu wiersza poleceń. Projekt wykorzystuje parser **ANTLR v4** do interpretacji spersonalizowanego języka (DSL) za pomocą własnej gramatyki, oraz bazę **SQLite** do trwałego przechowywania i filtrowania danych.
+Zaawansowana aplikacja do zarządzania zadaniami z poziomu wiersza poleceń i prostego interfejsu graficznego. Projekt wykorzystuje parser **ANTLR v4** do interpretacji spersonalizowanego języka (DSL) za pomocą własnej gramatyki, oraz bazę **SQLite** do trwałego przechowywania i filtrowania danych.
 
 ## 🚀 Główne Funkcjonalności
 
@@ -10,6 +10,7 @@ Zaawansowana aplikacja do zarządzania zadaniami z poziomu wiersza poleceń. Pro
 - **Notatki**: Dodawanie i uaktualnianie dodatkowych notatek (opisów) do istniejących zadań.
 - **Zaawansowane Widoki (Filtrowanie)**: Różnorodne perspektywy wyświetlania zadań opierające się o silnik SQL (Wszystkie, Zrobione, Graf Zależności, Domyślne Ukrywające Zablokowane).
 - **Case Insensitive**: Komendy można wpisywać bez zważania na wielkość znaków (np. `ADD` / `add` / `Add`).
+- **GUI (Tkinter)**: Możesz wpisywać te same komendy co w CLI, a okno pokazuje jednocześnie aktualny widok i osobny panel zależności.
 
 ---
 
@@ -57,7 +58,9 @@ Dostępne opcje widoków:
 1. **`grammar/todoParser.g4`**: Plik gramatyki ANTLR. Definiuje Tokeny (słowa kluczowe, łańcuchy znaków) oraz reguły parsowania dla wszystkich operacji projektowych.
 2. **`src/todo_app/todo_visitor.py`**: Przechwytuje drzewo składniowe wygenerowane przez ANTLR (AST) dla danej operacji, rozbija parametry wejściowe (wyłapuje daty, JSON-stringi na czysty tekst, tłumaczy logikę priorytetów na int) i zleca wykonanie akcji magazynowi.
 3. **`src/todo_app/todo_store.py`**: Rdzeń bazodanowy. Bezpośrednio obsługuje repozytorium SQLite (`todo.db`). Przetwarza wejścia od Visitora w pełnoprawne kwerendy (DDL w czasie inicjalizacji, klauzula `WITH RECURSIVE` dla detekcji cykli oraz instrukcje SQL dla wielorakich widoków komputera wyjściowego).
-4. **`src/main.py`**: Główny plik startupujący interfejs wiersza poleceń. Nawiązuje interaktywną powłokę oczekującą na wejście użytkownika i spaja parser z logiką aplikacji.
+4. **`src/todo_app/command_engine.py`**: Wspólny silnik komend dla CLI i GUI.
+5. **`src/todo_app/todo_gui.py`**: Interfejs graficzny oparty o `tkinter` z dwoma panelami: aktualny widok i zależności.
+6. **`src/main.py`**: Start aplikacji, przełącznik `--gui` lub domyślny tryb CLI.
 
 ## 🛠 Struktura Bazy Danych
 Model oparty o pojedynczy plik bazy `todo.db`, z minimalnym zrzutem tabel:
@@ -78,3 +81,9 @@ Odpalenie narzędzia lokalnie:
 ```bash
 python src/main.py
 ```
+
+Uruchomienie domyślne (konsola + wizualizacja GUI):
+```bash
+python src/main.py
+```
+

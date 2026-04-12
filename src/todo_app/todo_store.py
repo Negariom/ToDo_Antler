@@ -1,11 +1,59 @@
 import sqlite3
-from datetime import datetime
+from pathlib import Path
 
 class TodoStore:
-    def __init__(self, db_path="todo.db"):
-        self.conn = sqlite3.connect(db_path)
+    def __init__(self, db_path=None):
+        if db_path is None:
+            db_path = Path(__file__).resolve().parents[1] / "todo.db"
+
+        # Tryb hybrydowy uruchamia pętlę konsoli w osobnym wątku.
+        self.conn = sqlite3.connect(str(db_path), check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self._init_db()
+
+    def close(self):
+        if self.conn is not None:
+            self.conn.close()
+            self.conn = None
+
+    def _list_query(self, list_view=None):
+        view = (list_view or "ACTIVE").upper()
+
+        if view == "DONE":
+            return """
+                SELECT id, name, status, priority, deadline, completed_at, note
+                FROM tasks
+                WHERE status = 'DONE'
+                ORDER BY completed_at DESC
+            """
+
+        if view == "ALL":
+            return """
+                SELECT id, name, status, priority, deadline, completed_at, note
+                FROM tasks
+                ORDER BY priority DESC, deadline ASC
+            """
+
+        if view == "DEPENDENCIES":
+            return """
+                SELECT t.id, t.name, group_concat(td.depends_on_id) as deps
+                FROM tasks t
+                LEFT JOIN task_dependencies td ON t.id = td.task_id
+                GROUP BY t.id
+                ORDER BY t.id
+            """
+
+        return """
+            SELECT id, name, status, priority, deadline, completed_at, note
+            FROM tasks t
+            WHERE status != 'DONE'
+              AND NOT EXISTS (
+                  SELECT 1 FROM task_dependencies td
+                  JOIN tasks t_dep ON td.depends_on_id = t_dep.id
+                  WHERE td.task_id = t.id AND t_dep.status != 'DONE'
+              )
+            ORDER BY priority DESC, deadline ASC
+        """
 
     def _init_db(self):
         with self.conn:
@@ -63,7 +111,11 @@ class TodoStore:
                 if not dep_exists:
                     self.conn.rollback()
                     raise ValueError(f"Zależność (ID: {dep_id}) nie istnieje!")
-                
+
+                if dep_id == task_id or self.check_cycle(task_id, dep_id):
+                    self.conn.rollback()
+                    raise ValueError("Wykryto cykliczną zależność! Nie można dodać tego połączenia.")
+
                 # Insert dependency
                 self.conn.execute(
                     "INSERT INTO task_dependencies (task_id, depends_on_id) VALUES (?, ?)",
@@ -93,50 +145,15 @@ class TodoStore:
         print(f"Usunięto zadanie ID {task_id}.")
 
     def showList(self, list_view=None):
-        query = ""
-        if list_view == "DONE":
-            query = """
-                SELECT id, name, status, priority, deadline, completed_at, note
-                FROM tasks
-                WHERE status = 'DONE'
-                ORDER BY completed_at DESC
-            """
-        elif list_view == "ALL":
-            query = """
-                SELECT id, name, status, priority, deadline, completed_at, note
-                FROM tasks
-                ORDER BY priority DESC, deadline ASC
-            """
-        elif list_view == "DEPENDENCIES":
-            query = """
-                SELECT t.id, t.name, group_concat(td.depends_on_id) as deps
-                FROM tasks t
-                LEFT JOIN task_dependencies td ON t.id = td.task_id
-                GROUP BY t.id
-                ORDER BY t.id
-            """
-        else: # DEFAULT
-            query = """
-                SELECT id, name, status, priority, deadline, completed_at, note
-                FROM tasks t
-                WHERE status != 'DONE'
-                  AND NOT EXISTS (
-                      SELECT 1 FROM task_dependencies td
-                      JOIN tasks t_dep ON td.depends_on_id = t_dep.id
-                      WHERE td.task_id = t.id AND t_dep.status != 'DONE'
-                  )
-                ORDER BY priority DESC, deadline ASC
-            """
+        view = (list_view or "ACTIVE").upper()
+        rows = self.fetch_tasks(view)
 
-        cursor = self.conn.execute(query)
-        rows = cursor.fetchall()
-        
         if not rows:
             print("Brak zadań w wybranym widoku.")
             return
 
         for r in rows:
-            if list_view == "DEPENDENCIES":
+            if view == "DEPENDENCIES":
                 deps_text = f" -> Zależy od: {r['deps']}" if r['deps'] else ""
                 print(f"{r['id']}. {r['name']}{deps_text}")
             else:
@@ -147,3 +164,11 @@ class TodoStore:
                 comp_str = f", ZAKOŃCZONO: {r['completed_at']}" if r['completed_at'] else ""
                 note_str = f" [Notatka: {r['note']}]" if r['note'] else ""
                 print(f"{r['id']}. [{status_char}] {r['name']} (PRIORITY: {pri_str}{dead_str}{comp_str}){note_str}")
+
+        return rows
+
+    def fetch_tasks(self, list_view=None):
+        query = self._list_query(list_view)
+        cursor = self.conn.execute(query)
+        return cursor.fetchall()
+

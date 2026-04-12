@@ -37,7 +37,7 @@ class TodoVisitor(todoParserVisitor):
         dependencies = []
         if ctx.depends():
             for int_node in ctx.depends().INT():
-                dependencies.append(int_node.getText())
+                dependencies.append(int(int_node.getText()))
 
         note = None
         if ctx.note():
