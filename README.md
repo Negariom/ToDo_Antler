@@ -9,6 +9,7 @@ ToDoAntler to projekt oparty o własny DSL parsowany przez **ANTLR v4** i zapisy
 - deadline (`DEADLINE YYYY-MM-DD`)
 - zależności między zadaniami (`DEPENDS ON ...`)
 - notatki do zadań (`NOTE`)
+- edycja nazwy, priorytetu i deadline'u zadania (`EDIT`)
 - oznaczanie wykonania (`DONE`)
 - usuwanie (`DELETE`)
 - widoki listy (`LIST`, `LIST ALL`, `LIST DONE`, `LIST DEPENDENCIES`)
@@ -55,7 +56,20 @@ DELETE <ID_ZADANIA>
 NOTE <ID_ZADANIA> "Nowa treść notatki"
 ```
 
-### 5) Widoki listy
+### 5) Edycja nazwy zadania
+```text
+EDIT <ID_ZADANIA> ["Nowa nazwa zadania"] [PRIORITY LOW|MEDIUM|HIGH] [DEADLINE YYYY-MM-DD]
+```
+
+Przykłady:
+```text
+EDIT 3 "Nowa nazwa"
+EDIT 3 PRIORITY HIGH
+EDIT 3 DEADLINE 2026-05-01
+EDIT 3 "Nowa nazwa" PRIORITY MEDIUM DEADLINE 2026-05-10
+```
+
+### 6) Widoki listy
 
 - `LIST` - aktywne zadania (niewykonane i odblokowane)
 - `LIST ALL` - wszystkie zadania

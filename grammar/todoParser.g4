@@ -13,6 +13,7 @@ line
 
 command
 	: ADD STRING priority? deadline? depends? note? #addCommand
+	| EDIT INT STRING? priority? deadline? #editCommand
 	| DONE INT #doneCommand
 	| DELETE INT #deleteCommand
 	| LIST listView? #listCommand
@@ -40,6 +41,7 @@ listView
     ;
 
 ADD: 'ADD';
+EDIT: 'EDIT';
 DONE: 'DONE';
 DELETE: 'DELETE';
 LIST: 'LIST';

@@ -15,6 +15,17 @@ class TodoGuiApp:
         self.root.attributes("-topmost", True)
 
         self.status_var = tk.StringVar(value="Tryb wizualizacji: wpisuj komendy w konsoli.")
+        self.command_labels = {
+            "START": "START",
+            "ADD": "ADD",
+            "DONE": "DONE",
+            "DELETE": "DELETE",
+            "NOTE": "NOTE",
+            "LIST": "LIST",
+            "EDIT": "EDIT",
+            "EXIT": "EXIT",
+            "QUIT": "QUIT",
+        }
 
         self._build_ui()
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -75,7 +86,8 @@ class TodoGuiApp:
                 command, message, view, rows = self.update_queue.get_nowait()
                 self._render_rows(view, rows)
                 self._render_dependency_rows(self.store.fetch_tasks("DEPENDENCIES"))
-                self._set_status(f"{message} | Ostatnia komenda: {command}")
+                command_label = self._command_label(command)
+                self._set_status(f"{message} | Ostatnia komenda: {command_label}")
         except Empty:
             pass
 
@@ -146,6 +158,10 @@ class TodoGuiApp:
 
     def _set_status(self, text):
         self.status_var.set(text)
+
+    def _command_label(self, command):
+        token = (command or "").strip().split(" ", 1)[0].upper()
+        return self.command_labels.get(token, token or "-")
 
     def _on_close(self, *args):
         if self.on_close is not None:

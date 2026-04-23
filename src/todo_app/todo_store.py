@@ -130,6 +130,38 @@ class TodoStore:
                 raise ValueError(f"Zadanie o ID {task_id} nie zostało znalezione.")
         print(f"Zaktualizowano notatkę dla zadania ID {task_id}.")
 
+    def edit_task(self, task_id, new_name=None, priority=None, deadline=None):
+        updates = []
+        values = []
+
+        if new_name is not None:
+            cleaned_name = new_name.strip()
+            if not cleaned_name:
+                raise ValueError("Nazwa zadania nie moze byc pusta.")
+            updates.append("name = ?")
+            values.append(cleaned_name)
+
+        if priority is not None:
+            if priority not in (1, 2, 3):
+                raise ValueError("Priorytet musi byc jednym z: LOW, MEDIUM, HIGH.")
+            updates.append("priority = ?")
+            values.append(priority)
+
+        if deadline is not None:
+            updates.append("deadline = ?")
+            values.append(deadline)
+
+        if not updates:
+            raise ValueError("Podaj co najmniej jedno pole do edycji (nazwa, priority lub deadline).")
+
+        values.append(task_id)
+        sql = f"UPDATE tasks SET {', '.join(updates)} WHERE id = ?"
+        with self.conn:
+            cursor = self.conn.execute(sql, tuple(values))
+            if cursor.rowcount == 0:
+                raise ValueError(f"Zadanie o ID {task_id} nie zostało znalezione.")
+        print(f"Zaktualizowano zadanie ID {task_id}.")
+
     def done(self, task_id):
         with self.conn:
             cursor = self.conn.execute("UPDATE tasks SET status = 'DONE', completed_at = CURRENT_TIMESTAMP WHERE id = ?", (task_id,))

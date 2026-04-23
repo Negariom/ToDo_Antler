@@ -48,6 +48,31 @@ class TodoVisitor(todoParserVisitor):
         self.store.add(text, priority=priority, deadline=deadline, dependencies=dependencies, note=note)
         return None
 
+    def visitEditCommand(self, ctx):
+        task_id = int(ctx.INT().getText())
+
+        new_name = None
+        if ctx.STRING():
+            raw_text = ctx.STRING().getText()
+            new_name = json.loads(raw_text)
+
+        priority = None
+        if ctx.priority():
+            pri_text = ctx.priority().getText().upper()
+            if "MEDIUM" in pri_text:
+                priority = 2
+            elif "HIGH" in pri_text:
+                priority = 3
+            else:
+                priority = 1
+
+        deadline = None
+        if ctx.deadline():
+            deadline = ctx.deadline().DATE().getText()
+
+        self.store.edit_task(task_id, new_name, priority=priority, deadline=deadline)
+        return None
+
     def visitDoneCommand(self, ctx: todoParserParser.DoneCommandContext):
         self.store.done(int(ctx.INT().getText()))
         return None

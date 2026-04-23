@@ -24,6 +24,7 @@ def run_app():
         print("  DONE n")
         print("  DELETE n")
         print("  NOTE n \"nowa notatka\"")
+        print("  EDIT n [\"nowa nazwa zadania\"] [PRIORITY LOW|MEDIUM|HIGH] [DEADLINE YYYY-MM-DD]")
         print("  LIST [ALL|DONE|DEPENDENCIES]")
         print("Wyjscie: exit lub quit")
 
